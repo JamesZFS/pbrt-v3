@@ -108,6 +108,31 @@ class SamplerIntegrator : public Integrator {
 template <typename T>
 using DualType = std::pair<T, T>;
 
+struct DualBuffer;
+struct DualBufferTile;
+
+struct DualBuffer {
+    std::unique_ptr<Film> a, b;
+    int64_t spp_2; // spp / 2
+
+    explicit DualBuffer(const std::string &name, int64_t spp);
+
+    DualBufferTile GetFilmTile(const Bounds2i &sampleBounds);
+
+    void MergeTile(DualBufferTile dualTile);
+
+    void WriteImage();
+};
+
+struct DualBufferTile {
+    std::unique_ptr<FilmTile> a, b;
+    int64_t spp_2;
+
+    DualBufferTile() = delete;
+
+    void AddSample(int64_t currentSampleIndex, const Point2f &pFilm, Spectrum L, Float sampleWeight = 1.);
+};
+
 }  // namespace pbrt
 
 #endif  // PBRT_CORE_INTEGRATOR_H

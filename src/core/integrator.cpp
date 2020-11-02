@@ -48,8 +48,8 @@ namespace pbrt {
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
-using DualBuffer = DualType<std::unique_ptr<Film>>;
-using DualBufferTile = DualType<std::unique_ptr<FilmTile>>;
+//using DualBuffer = DualType<std::unique_ptr<Film>>;
+//using DualBufferTile = DualType<std::unique_ptr<FilmTile>>;
 
 // Integrator Method Definitions
 Integrator::~Integrator() {}
@@ -239,10 +239,8 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 void SamplerIntegrator::Render(const Scene &scene) {
     Preprocess(scene, *sampler);
     // TODO if PbrtOptions.ABBuffer?
-    DualBuffer radiance{
-            std::unique_ptr<Film>(MakeBufferLikeFilm("radiance-A.exr")),
-            std::unique_ptr<Film>(MakeBufferLikeFilm("radiance-B.exr"))
-    };
+    auto spp = sampler->samplesPerPixel;
+    DualBuffer radiance("radiance", spp);
     // Render image tiles in parallel
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
@@ -274,9 +272,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile = camera->film->GetFilmTile(tileBounds);
-            DualBufferTile radianceTile{
-                    radiance.first->GetFilmTile(tileBounds), radiance.second->GetFilmTile(tileBounds)
-            };
+            DualBufferTile radianceTile = radiance.GetFilmTile(tileBounds);
 
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
@@ -340,8 +336,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
                     // Add to AB buffer
-                    (tileSampler->CurrentSampleNumber() < halfSampleCount ? radianceTile.first : radianceTile.second)
-                            ->AddSample(cameraSample.pFilm, L, rayWeight);
+                    radianceTile.AddSample(tileSampler->CurrentSampleNumber(), cameraSample.pFilm, L, rayWeight);
 
                     // Free _MemoryArena_ memory from computing image sample
                     // value
@@ -352,8 +347,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
-            radiance.first->MergeFilmTile(std::move(radianceTile.first));
-            radiance.second->MergeFilmTile(std::move(radianceTile.second));
+            radiance.MergeTile(std::move(radianceTile));
             reporter.Update();
         }, nTiles);
         reporter.Done();
@@ -362,8 +356,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
     // Save final image after rendering
     camera->film->WriteImage();
-    radiance.first->WriteImage();
-    radiance.second->WriteImage();
+    radiance.WriteImage();
 }
 
 Spectrum SamplerIntegrator::SpecularReflect(
@@ -483,6 +476,28 @@ Spectrum SamplerIntegrator::SpecularTransmit(
         L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
     }
     return L;
+}
+
+DualBuffer::DualBuffer(const std::string &name, int64_t spp)
+        : a{MakeBufferLikeFilm(name + "-A.exr")}, b{MakeBufferLikeFilm(name + "-B.exr")},
+          spp_2(spp / 2) {}
+
+DualBufferTile DualBuffer::GetFilmTile(const Bounds2i &sampleBounds) {
+    return DualBufferTile{a->GetFilmTile(sampleBounds), b->GetFilmTile(sampleBounds), spp_2};
+}
+
+void DualBuffer::MergeTile(DualBufferTile dualTile) {
+    a->MergeFilmTile(std::move(dualTile.a));
+    b->MergeFilmTile(std::move(dualTile.b));
+}
+
+void DualBuffer::WriteImage() {
+    a->WriteImage();
+    b->WriteImage();
+}
+
+void DualBufferTile::AddSample(int64_t currentSampleIndex, const Point2f &pFilm, Spectrum L, Float sampleWeight) {
+    (currentSampleIndex < spp_2 ? a : b)->AddSample(pFilm, L, sampleWeight);
 }
 
 }  // namespace pbrt
