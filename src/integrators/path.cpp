@@ -51,14 +51,14 @@ PathIntegrator::PathIntegrator(int maxDepth,
                                std::shared_ptr<Sampler> sampler,
                                const Bounds2i &pixelBounds, Float rrThreshold,
                                const std::string &lightSampleStrategy)
-    : SamplerIntegrator(camera, sampler, pixelBounds),
-      maxDepth(maxDepth),
-      rrThreshold(rrThreshold),
-      lightSampleStrategy(lightSampleStrategy) {}
+        : SamplerIntegrator(camera, sampler, pixelBounds),
+          maxDepth(maxDepth),
+          rrThreshold(rrThreshold),
+          lightSampleStrategy(lightSampleStrategy) {}
 
 void PathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
     lightDistribution =
-        CreateLightSampleDistribution(lightSampleStrategy, scene);
+            CreateLightSampleDistribution(lightSampleStrategy, scene);
 }
 
 Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
@@ -93,7 +93,8 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             if (foundIntersection) {
                 L += beta * isect.Le(-ray.d);
                 VLOG(2) << "Added Le -> L = " << L;
-            } else {
+            }
+            else {
                 for (const auto &light : scene.infiniteLights)
                     L += beta * light->Le(ray);
                 VLOG(2) << "Added infinite area lights -> L = " << L;
@@ -116,8 +117,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Sample illumination from lights to find path contribution.
         // (But skip this for perfectly specular BSDFs.)
-        if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) >
-            0) {
+        if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
             ++totalPaths;
             Spectrum Ld = beta * UniformSampleOneLight(isect, scene, arena,
                                                        sampler, false, distrib);
@@ -154,7 +154,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             // Importance sample the BSSRDF
             SurfaceInteraction pi;
             Spectrum S = isect.bssrdf->Sample_S(
-                scene, sampler.Get1D(), sampler.Get2D(), arena, &pi, &pdf);
+                    scene, sampler.Get1D(), sampler.Get2D(), arena, &pi, &pdf);
             DCHECK(!std::isinf(beta.y()));
             if (S.IsBlack() || pdf == 0) break;
             beta *= S / pdf;
@@ -177,7 +177,7 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // Factor out radiance scaling due to refraction in rrBeta.
         Spectrum rrBeta = beta * etaScale;
         if (rrBeta.MaxComponentValue() < rrThreshold && bounces > 3) {
-            Float q = std::max((Float).05, 1 - rrBeta.MaxComponentValue());
+            Float q = std::max((Float) .05, 1 - rrBeta.MaxComponentValue());
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;
             DCHECK(!std::isinf(beta.y()));
@@ -200,14 +200,15 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
                   np);
         else {
             pixelBounds = Intersect(pixelBounds,
-                                    Bounds2i{{pb[0], pb[2]}, {pb[1], pb[3]}});
+                                    Bounds2i{{pb[0], pb[2]},
+                                             {pb[1], pb[3]}});
             if (pixelBounds.Area() == 0)
                 Error("Degenerate \"pixelbounds\" specified.");
         }
     }
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
     std::string lightStrategy =
-        params.FindOneString("lightsamplestrategy", "spatial");
+            params.FindOneString("lightsamplestrategy", "spatial");
     return new PathIntegrator(maxDepth, camera, sampler, pixelBounds,
                               rrThreshold, lightStrategy);
 }

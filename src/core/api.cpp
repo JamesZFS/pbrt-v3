@@ -1726,4 +1726,9 @@ Camera *RenderOptions::MakeCamera() const {
     return camera;
 }
 
+Film *MakeBufferLikeFilm(const std::string &filename) {
+    std::unique_ptr<Filter> filter = MakeFilter(renderOptions->FilterName, renderOptions->FilterParams);
+    return CreateFilm(renderOptions->FilmParams, std::move(filter), filename);
+}
+
 }  // namespace pbrt

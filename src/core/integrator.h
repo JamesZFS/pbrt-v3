@@ -105,6 +105,9 @@ class SamplerIntegrator : public Integrator {
     const Bounds2i pixelBounds;
 };
 
+template <typename T>
+using DualType = std::pair<T, T>;
+
 }  // namespace pbrt
 
 #endif  // PBRT_CORE_INTEGRATOR_H

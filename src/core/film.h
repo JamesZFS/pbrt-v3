@@ -186,6 +186,8 @@ class FilmTile {
     friend class Film;
 };
 
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter, const std::string &filename);
+
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter);
 
 }  // namespace pbrt

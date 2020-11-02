@@ -90,6 +90,7 @@ void pbrtWorldEnd();
 
 void pbrtParseFile(std::string filename);
 void pbrtParseString(std::string str);
+Film *MakeBufferLikeFilm(const std::string &filename);
 
 }  // namespace pbrt
 

@@ -210,19 +210,7 @@ void Film::WriteImage(Float splatScale) {
     pbrt::WriteImage(filename, &rgb[0], croppedPixelBounds, fullResolution);
 }
 
-Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
-    std::string filename;
-    if (PbrtOptions.imageFile != "") {
-        filename = PbrtOptions.imageFile;
-        std::string paramsFilename = params.FindOneString("filename", "");
-        if (paramsFilename != "")
-            Warning(
-                "Output filename supplied on command line, \"%s\" is overriding "
-                "filename provided in scene description file, \"%s\".",
-                PbrtOptions.imageFile.c_str(), paramsFilename.c_str());
-    } else
-        filename = params.FindOneString("filename", "pbrt.exr");
-
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter, const std::string &filename) {
     int xres = params.FindOneInt("xresolution", 1280);
     int yres = params.FindOneInt("yresolution", 720);
     if (PbrtOptions.quickRender) xres = std::max(1, xres / 4);
@@ -249,6 +237,22 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
                                                    Infinity);
     return new Film(Point2i(xres, yres), crop, std::move(filter), diagonal,
                     filename, scale, maxSampleLuminance);
+}
+
+Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
+    std::string filename;
+    if (PbrtOptions.imageFile != "") {
+        filename = PbrtOptions.imageFile;
+        std::string paramsFilename = params.FindOneString("filename", "");
+        if (paramsFilename != "")
+            Warning(
+                "Output filename supplied on command line, \"%s\" is overriding "
+                "filename provided in scene description file, \"%s\".",
+                PbrtOptions.imageFile.c_str(), paramsFilename.c_str());
+    } else
+        filename = params.FindOneString("filename", "pbrt.exr");
+
+    return CreateFilm(params, std::move(filter), filename);
 }
 
 }  // namespace pbrt
