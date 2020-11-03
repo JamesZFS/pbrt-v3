@@ -359,7 +359,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
     // Save final image after rendering
     camera->film->WriteImage();
-    auxiliary.radiance.WriteImage();
+    auxiliary.WriteImage();
 }
 
 Spectrum SamplerIntegrator::SpecularReflect(

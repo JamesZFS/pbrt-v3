@@ -53,6 +53,8 @@ struct AuxiliaryBuffers {
     AuxiliaryBuffersTile GetFilmTile(const Bounds2i &sampleBounds);
 
     void MergeTile(AuxiliaryBuffersTile &tile);
+
+    void WriteImage() const;
 };
 
 struct AuxiliaryBuffersTile {

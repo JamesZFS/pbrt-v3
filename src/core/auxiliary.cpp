@@ -77,6 +77,13 @@ void AuxiliaryBuffers::MergeTile(AuxiliaryBuffersTile &tile) {
     depth.MergeTile(tile.depth);
 }
 
+void AuxiliaryBuffers::WriteImage() const {
+    radiance.WriteImage();
+    albedo.WriteImage();
+    normal.WriteImage();
+    depth.WriteImage();
+}
+
 void AuxiliaryBuffersTile::AddSample(int64_t currentSampleIndex, const Point2f &pFilm, const PerRayData &prd,
                                      Float sampleWeight) {
     radiance.AddSample(currentSampleIndex, pFilm, prd.radiance, sampleWeight);

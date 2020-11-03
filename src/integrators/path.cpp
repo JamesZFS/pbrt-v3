@@ -67,6 +67,7 @@ void PathIntegrator::Li(const RayDifferential &r, const Scene &scene, Sampler &s
     Spectrum L(0.f), beta(1.f);
     RayDifferential ray(r);
     bool specularBounce = false;
+    bool primaryHit = false;  // Track when we firstly hit some non-specular surface
     int bounces;
     // Added after book publication: etaScale tracks the accumulated effect
     // of radiance scaling due to rays passing through refractive
@@ -147,6 +148,14 @@ void PathIntegrator::Li(const RayDifferential &r, const Scene &scene, Sampler &s
             etaScale *= (Dot(wo, isect.n) > 0) ? (eta * eta) : 1 / (eta * eta);
         }
         ray = isect.SpawnRay(wi);
+
+        // Possibly track auxiliary infos:
+        if (!primaryHit && !specularBounce) {
+            primaryHit = true;
+            prd.albedo = f;
+            prd.normal = isect.n;
+            prd.depth = Distance(isect.p, r.o);
+        }
 
         // Account for subsurface scattering, if applicable
         if (isect.bssrdf && (flags & BSDF_TRANSMISSION)) {
