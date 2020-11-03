@@ -61,7 +61,7 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
 
 Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
                                       const Scene &scene, Sampler &sampler,
-                                      MemoryArena &arena, int depth) const {
+                                      MemoryArena &arena, int depth, AuxiliaryBuffersTile *auxiliary) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance

@@ -17,6 +17,8 @@ using DualType = std::pair<T, T>;
 
 struct DualBuffer;
 struct DualBufferTile;
+struct AuxiliaryBuffers;
+struct AuxiliaryBuffersTile;
 
 struct DualBuffer {
     std::unique_ptr<Film> a, b, tot;  // A buffer, B buffer, total buffer
@@ -27,7 +29,7 @@ struct DualBuffer {
 
     DualBufferTile GetFilmTile(const Bounds2i &sampleBounds);
 
-    void MergeTile(DualBufferTile dualTile);
+    void MergeTile(DualBufferTile &dualTile);
 
     void WriteImage() const;
 };
@@ -43,7 +45,20 @@ struct DualBufferTile {
 };
 
 struct AuxiliaryBuffers {
-    DualBuffer albedo, normal, position;
+    DualBuffer radiance, albedo, normal, depth;
+
+    explicit AuxiliaryBuffers(const std::string &prefix, int64_t spp);
+
+    AuxiliaryBuffersTile GetFilmTile(const Bounds2i &sampleBounds);
+
+    void MergeTile(AuxiliaryBuffersTile &tile);
+
+};
+
+struct AuxiliaryBuffersTile {
+    DualBufferTile radiance, albedo, normal, depth;
+
+    AuxiliaryBuffersTile() = delete;
 };
 
 }

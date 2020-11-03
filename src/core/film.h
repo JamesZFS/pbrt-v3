@@ -81,8 +81,8 @@ class Film {
     Bounds2i croppedPixelBounds;
 
 protected:
-    friend class DualBuffer;
-    friend class DualBufferTile;
+    friend struct DualBuffer;
+    friend struct DualBufferTile;
 
     // Film Private Data
     struct Pixel {

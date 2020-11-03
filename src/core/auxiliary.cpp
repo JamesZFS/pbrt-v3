@@ -22,7 +22,7 @@ DualBufferTile DualBuffer::GetFilmTile(const Bounds2i &sampleBounds) {
     };
 }
 
-void DualBuffer::MergeTile(DualBufferTile dualTile) {
+void DualBuffer::MergeTile(DualBufferTile &dualTile) {
     a->MergeFilmTile(std::move(dualTile.a)), b->MergeFilmTile(std::move(dualTile.b)), tot->MergeFilmTile(
             std::move(dualTile.tot));
     a2->MergeFilmTile(std::move(dualTile.a2)), b2->MergeFilmTile(std::move(dualTile.b2)), tot2->MergeFilmTile(
@@ -37,6 +37,7 @@ void DualBuffer::WriteImage() const {
         return [w, &EX](Float *rgb, const Point2i &p) {
             Float *ex = EX->GetPixel(p).xyz;
             // Var(X) = (EX^2 - (EX)^2) * n/(n-1)
+            // Var(MonteCarlo(X)) = Var(x) / n
             rgb[0] = (rgb[0] - ex[0] * ex[0]) * w;
             rgb[1] = (rgb[1] - ex[1] * ex[1]) * w;
             rgb[2] = (rgb[2] - ex[2] * ex[2]) * w;
@@ -54,6 +55,26 @@ DualBufferTile::AddSample(int64_t currentSampleIndex, const Point2f &pFilm, cons
     auto L2 = L * L;
     (currentSampleIndex < spp_2 ? a2 : b2)->AddSample(pFilm, L2, sampleWeight);
     tot2->AddSample(pFilm, L2, sampleWeight);
+}
+
+AuxiliaryBuffers::AuxiliaryBuffers(const std::string &prefix, int64_t spp) :
+        radiance(prefix + "radiance", spp),
+        albedo(prefix + "albedo", spp),
+        normal(prefix + "normal", spp),
+        depth(prefix + "depth", spp) {}
+
+AuxiliaryBuffersTile AuxiliaryBuffers::GetFilmTile(const Bounds2i &sampleBounds) {
+    return {
+            radiance.GetFilmTile(sampleBounds), albedo.GetFilmTile(sampleBounds), normal.GetFilmTile(sampleBounds),
+            depth.GetFilmTile(sampleBounds)
+    };
+}
+
+void AuxiliaryBuffers::MergeTile(AuxiliaryBuffersTile &tile) {
+    radiance.MergeTile(tile.radiance);
+    albedo.MergeTile(tile.albedo);
+    normal.MergeTile(tile.normal);
+    depth.MergeTile(tile.depth);
 }
 
 }

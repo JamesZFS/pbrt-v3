@@ -31,6 +31,7 @@
  */
 
 // core/integrator.cpp*
+#include <filesystem>
 #include "integrator.h"
 #include "scene.h"
 #include "interaction.h"
@@ -42,11 +43,13 @@
 #include "progressreporter.h"
 #include "camera.h"
 #include "stats.h"
-#include "auxiliary.h"
+
+namespace fs = std::filesystem;
 
 namespace pbrt {
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
+const static std::string AUXILIARY_PATH{"./auxiliary"};
 
 //using DualBuffer = DualType<std::unique_ptr<Film>>;
 //using DualBufferTile = DualType<std::unique_ptr<FilmTile>>;
@@ -238,9 +241,8 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
 // SamplerIntegrator Method Definitions
 void SamplerIntegrator::Render(const Scene &scene) {
     Preprocess(scene, *sampler);
-    // TODO if PbrtOptions.ABBuffer?
-    auto spp = sampler->samplesPerPixel;
-    DualBuffer radiance("radiance", spp);
+    if (!fs::exists(AUXILIARY_PATH)) fs::create_directory(AUXILIARY_PATH);
+    AuxiliaryBuffers auxiliary(AUXILIARY_PATH + "/", sampler->samplesPerPixel);
     // Render image tiles in parallel
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
@@ -272,7 +274,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile = camera->film->GetFilmTile(tileBounds);
-            DualBufferTile radianceTile = radiance.GetFilmTile(tileBounds);
+            AuxiliaryBuffersTile auxiliaryTile = auxiliary.GetFilmTile(tileBounds);
 
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
@@ -303,7 +305,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
+                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena, 0, &auxiliaryTile);
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -336,7 +338,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
                     // Add to AB buffer
-                    radianceTile.AddSample(tileSampler->CurrentSampleNumber(), cameraSample.pFilm, L, rayWeight);
+                    auxiliaryTile.radiance.AddSample(tileSampler->CurrentSampleNumber(), cameraSample.pFilm, L, rayWeight);
 
                     // Free _MemoryArena_ memory from computing image sample
                     // value
@@ -347,7 +349,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
             // Merge image tile into _Film_
             camera->film->MergeFilmTile(std::move(filmTile));
-            radiance.MergeTile(std::move(radianceTile));
+            auxiliary.MergeTile(auxiliaryTile);
             reporter.Update();
         }, nTiles);
         reporter.Done();
@@ -356,7 +358,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
     // Save final image after rendering
     camera->film->WriteImage();
-    radiance.WriteImage();
+    auxiliary.radiance.WriteImage();
 }
 
 Spectrum SamplerIntegrator::SpecularReflect(
