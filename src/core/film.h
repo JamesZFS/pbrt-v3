@@ -40,11 +40,13 @@
 
 // core/film.h*
 #include "pbrt.h"
+#include <functional>
 #include "geometry.h"
 #include "spectrum.h"
 #include "filter.h"
 #include "stats.h"
 #include "parallel.h"
+#include "auxiliary.h"
 
 namespace pbrt {
 
@@ -68,7 +70,7 @@ class Film {
     void MergeFilmTile(std::unique_ptr<FilmTile> tile);
     void SetImage(const Spectrum *img) const;
     void AddSplat(const Point2f &p, Spectrum v);
-    void WriteImage(Float splatScale = 1);
+    void WriteImage(Float splatScale = 1, bool saveToXYZ = false, const std::function<void(Float *, const Point2i &)> &postOp = {});
     void Clear();
 
     // Film Public Data
@@ -78,7 +80,10 @@ class Film {
     const std::string filename;
     Bounds2i croppedPixelBounds;
 
-  private:
+protected:
+    friend class DualBuffer;
+    friend class DualBufferTile;
+
     // Film Private Data
     struct Pixel {
         Pixel() { xyz[0] = xyz[1] = xyz[2] = filterWeightSum = 0; }

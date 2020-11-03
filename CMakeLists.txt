@@ -404,7 +404,7 @@ SET ( PBRT_CORE_SOURCE
   src/core/stats.cpp
   src/core/texture.cpp
   src/core/transform.cpp
-  )
+        src/core/auxiliary.cpp src/core/auxiliary.h)
 
 SET ( PBRT_CORE_HEADERS
   src/core/api.h

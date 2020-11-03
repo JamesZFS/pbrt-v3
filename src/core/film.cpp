@@ -166,7 +166,7 @@ void Film::AddSplat(const Point2f &p, Spectrum v) {
     for (int i = 0; i < 3; ++i) pixel.splatXYZ[i].Add(xyz[i]);
 }
 
-void Film::WriteImage(Float splatScale) {
+void Film::WriteImage(Float splatScale, bool saveToXYZ, const std::function<void(Float *, const Point2i &)> &postOp) {
     // Convert image to RGB and compute final pixel values
     LOG(INFO) <<
         "Converting image to RGB and computing final weighted pixel values";
@@ -201,6 +201,16 @@ void Film::WriteImage(Float splatScale) {
         rgb[3 * offset] *= scale;
         rgb[3 * offset + 1] *= scale;
         rgb[3 * offset + 2] *= scale;
+
+        // Possibly do some post processing
+        if (postOp) postOp(&rgb[3 * offset], p);
+
+        if (saveToXYZ) {
+            pixel.xyz[0] = rgb[3 * offset];
+            pixel.xyz[1] = rgb[3 * offset + 1];
+            pixel.xyz[2] = rgb[3 * offset + 2];
+        }
+
         ++offset;
     }
 

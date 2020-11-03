@@ -42,7 +42,7 @@
 #include "progressreporter.h"
 #include "camera.h"
 #include "stats.h"
-#include "api.h"
+#include "auxiliary.h"
 
 namespace pbrt {
 
@@ -476,28 +476,6 @@ Spectrum SamplerIntegrator::SpecularTransmit(
         L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
     }
     return L;
-}
-
-DualBuffer::DualBuffer(const std::string &name, int64_t spp)
-        : a{MakeBufferLikeFilm(name + "-A.exr")}, b{MakeBufferLikeFilm(name + "-B.exr")},
-          spp_2(spp / 2) {}
-
-DualBufferTile DualBuffer::GetFilmTile(const Bounds2i &sampleBounds) {
-    return DualBufferTile{a->GetFilmTile(sampleBounds), b->GetFilmTile(sampleBounds), spp_2};
-}
-
-void DualBuffer::MergeTile(DualBufferTile dualTile) {
-    a->MergeFilmTile(std::move(dualTile.a));
-    b->MergeFilmTile(std::move(dualTile.b));
-}
-
-void DualBuffer::WriteImage() {
-    a->WriteImage();
-    b->WriteImage();
-}
-
-void DualBufferTile::AddSample(int64_t currentSampleIndex, const Point2f &pFilm, Spectrum L, Float sampleWeight) {
-    (currentSampleIndex < spp_2 ? a : b)->AddSample(pFilm, L, sampleWeight);
 }
 
 }  // namespace pbrt
