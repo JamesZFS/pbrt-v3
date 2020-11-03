@@ -59,8 +59,8 @@ class DirectLightingIntegrator : public SamplerIntegrator {
         : SamplerIntegrator(camera, sampler, pixelBounds),
           strategy(strategy),
           maxDepth(maxDepth) {}
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth, AuxiliaryBuffersTile *auxiliary = nullptr) const;
+    void Li(const RayDifferential &ray, const Scene &scene,
+            Sampler &sampler, MemoryArena &arena, PerRayData &prd, int depth) const;
     void Preprocess(const Scene &scene, Sampler &sampler);
 
   private:

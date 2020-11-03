@@ -304,8 +304,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
-                    Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena, 0, &auxiliaryTile);
+                    PerRayData prd;
+                    if (rayWeight > 0) Li(ray, scene, *tileSampler, arena, prd, 0);
+                    Spectrum L = prd.radiance;
 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
@@ -338,7 +339,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
                     // Add to AB buffer
-                    auxiliaryTile.radiance.AddSample(tileSampler->CurrentSampleNumber(), cameraSample.pFilm, L, rayWeight);
+                    auxiliaryTile.AddSample(tileSampler->CurrentSampleNumber(), cameraSample.pFilm, prd, rayWeight);
 
                     // Free _MemoryArena_ memory from computing image sample
                     // value
@@ -393,7 +394,9 @@ Spectrum SamplerIntegrator::SpecularReflect(
             rd.ryDirection =
                     wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
         }
-        return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
+        PerRayData prd;
+        Li(rd, scene, sampler, arena, prd, depth + 1);
+        return f * prd.radiance * AbsDot(wi, ns) /
                pdf;
     }
     else
@@ -475,7 +478,9 @@ Spectrum SamplerIntegrator::SpecularTransmit(
             rd.ryDirection =
                     wi - eta * dwody + Vector3f(mu * dndy + dmudy * ns);
         }
-        L = f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) / pdf;
+        PerRayData prd;
+        Li(rd, scene, sampler, arena, prd, depth + 1);
+        L = f * prd.radiance * AbsDot(wi, ns) / pdf;
     }
     return L;
 }

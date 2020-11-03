@@ -77,4 +77,12 @@ void AuxiliaryBuffers::MergeTile(AuxiliaryBuffersTile &tile) {
     depth.MergeTile(tile.depth);
 }
 
+void AuxiliaryBuffersTile::AddSample(int64_t currentSampleIndex, const Point2f &pFilm, const PerRayData &prd,
+                                     Float sampleWeight) {
+    radiance.AddSample(currentSampleIndex, pFilm, prd.radiance, sampleWeight);
+    albedo.AddSample(currentSampleIndex, pFilm, prd.albedo, sampleWeight);
+    normal.AddSample(currentSampleIndex, pFilm, Spectrum::FromRGB(&prd.normal.x), sampleWeight);
+    depth.AddSample(currentSampleIndex, pFilm, Spectrum(prd.depth), sampleWeight);
+}
+
 }

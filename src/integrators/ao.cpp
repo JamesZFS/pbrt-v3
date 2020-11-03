@@ -54,9 +54,8 @@ AOIntegrator::AOIntegrator(bool cosSample, int ns,
     sampler->Request2DArray(nSamples);
 }
 
-Spectrum AOIntegrator::Li(const RayDifferential &r, const Scene &scene,
-                          Sampler &sampler, MemoryArena &arena,
-                          int depth, AuxiliaryBuffersTile *auxiliary) const {
+void AOIntegrator::Li(const RayDifferential &r, const Scene &scene, Sampler &sampler, MemoryArena &arena,
+                      PerRayData &prd, int depth) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     RayDifferential ray(r);
@@ -99,7 +98,7 @@ Spectrum AOIntegrator::Li(const RayDifferential &r, const Scene &scene,
                 L += Dot(wi, n) / (pdf * nSamples);
         }
     }
-    return L;
+    prd.radiance = L;
 }
 
 AOIntegrator *CreateAOIntegrator(const ParamSet &params,

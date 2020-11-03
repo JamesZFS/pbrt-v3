@@ -58,8 +58,8 @@ class VolPathIntegrator : public SamplerIntegrator {
           rrThreshold(rrThreshold),
           lightSampleStrategy(lightSampleStrategy) { }
     void Preprocess(const Scene &scene, Sampler &sampler);
-    Spectrum Li(const RayDifferential &ray, const Scene &scene,
-                Sampler &sampler, MemoryArena &arena, int depth, AuxiliaryBuffersTile *auxiliary = nullptr) const;
+    void Li(const RayDifferential &ray, const Scene &scene,
+            Sampler &sampler, MemoryArena &arena, PerRayData &prd, int depth) const;
 
   private:
     // VolPathIntegrator Private Data

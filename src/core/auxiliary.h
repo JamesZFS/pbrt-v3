@@ -19,6 +19,7 @@ struct DualBuffer;
 struct DualBufferTile;
 struct AuxiliaryBuffers;
 struct AuxiliaryBuffersTile;
+struct PerRayData;
 
 struct DualBuffer {
     std::unique_ptr<Film> a, b, tot;  // A buffer, B buffer, total buffer
@@ -52,13 +53,20 @@ struct AuxiliaryBuffers {
     AuxiliaryBuffersTile GetFilmTile(const Bounds2i &sampleBounds);
 
     void MergeTile(AuxiliaryBuffersTile &tile);
-
 };
 
 struct AuxiliaryBuffersTile {
     DualBufferTile radiance, albedo, normal, depth;
 
     AuxiliaryBuffersTile() = delete;
+
+    void AddSample(int64_t currentSampleIndex, const Point2f &pFilm, const PerRayData &prd, Float sampleWeight = 1.);
+};
+
+struct PerRayData {
+    Spectrum radiance, albedo;
+    Normal3f normal;
+    Float depth;
 };
 
 }
